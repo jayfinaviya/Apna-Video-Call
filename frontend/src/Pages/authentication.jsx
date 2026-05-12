@@ -74,12 +74,13 @@ export default function Authentication() {
                     sm={4}
                     md={7}
                     sx={{
-                        backgroundImage: "url('https://unsplash.com/photos/mountains-covered-with-fogs-PwzISwC2kLs')",
+                        backgroundImage: 'url(https://source.unsplash.com/random?wallpapers)',
                         backgroundRepeat: 'no-repeat',
                         backgroundColor: (t) =>
                             t.palette.mode === 'light' ? t.palette.grey[50] : t.palette.grey[900],
                         backgroundSize: 'cover',
                         backgroundPosition: 'center',
+                         height: '100vh',
                         
                     }}
                 />
@@ -107,7 +108,7 @@ export default function Authentication() {
                             </Button>
                         </div>
 
-                        <Box component="form" noValidate sx={{ mt: 1 }}>
+                        <Box component="form" noValidate sx={{ mt: 1, width: '400px', display: 'flex', flexDirection: 'column', justifyContent: 'center', minHeight: '250px', }}>
                             {formState === 1 ? <TextField
                                 margin="normal"
                                 required
