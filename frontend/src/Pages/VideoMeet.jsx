@@ -1,4 +1,6 @@
-import React from 'react'
+import React, { useEffect, useRef, useState } from 'react'
+
+import styles from "../styles/videoComponent.module.css";
 
 const server_url = "http://localhost:8000";
 
