@@ -46,6 +46,61 @@ export default function VideoMeet() {
     const videoRef = useRef([])
 
     let [videos, setVideos] = useState([])
+
+    // TODO
+    // if(isChrome() === false) {
+
+
+    // }
+
+
+     useEffect(() => {
+        console.log("HELLO")
+        getPermissions();
+
+    })
+
+
+     const getPermissions = async () => {
+        try {
+            const videoPermission = await navigator.mediaDevices.getUserMedia({ video: true });
+            if (videoPermission) {
+                setVideoAvailable(true);
+                console.log('Video permission granted');
+            } else {
+                setVideoAvailable(false);
+                console.log('Video permission denied');
+            }
+
+            const audioPermission = await navigator.mediaDevices.getUserMedia({ audio: true });
+            if (audioPermission) {
+                setAudioAvailable(true);
+                console.log('Audio permission granted');
+            } else {
+                setAudioAvailable(false);
+                console.log('Audio permission denied');
+            }
+
+            if (navigator.mediaDevices.getDisplayMedia) {
+                setScreenAvailable(true);
+            } else {
+                setScreenAvailable(false);
+            }
+            
+             if (videoAvailable || audioAvailable) {
+                const userMediaStream = await navigator.mediaDevices.getUserMedia({ video: videoAvailable, audio: audioAvailable });
+                if (userMediaStream) {
+                    window.localStream = userMediaStream;
+                    if (localVideoref.current) {
+                        localVideoref.current.srcObject = userMediaStream;
+                    }
+                }
+            }
+             } catch (error) {
+            console.log(error);
+        }
+    };
+
     
   return (
     <div>
