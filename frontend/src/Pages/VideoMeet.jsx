@@ -105,10 +105,13 @@ export default function VideoMeet() {
             console.log(error);
         }
     }
+
+
     useEffect(() => {
         getPermissions();
 
     },[])
+    
 
     let getUserMediaSuccess = (stream) => {
         try {
@@ -132,7 +135,6 @@ export default function VideoMeet() {
                     .catch(e => console.log(e))
             })
     }
-
     stream.getTracks().forEach(track => track.onended = () => {
             setVideo(false);
             setAudio(false);
@@ -160,6 +162,8 @@ export default function VideoMeet() {
         })
     }
 
+
+
      let getUserMedia = () => {
         if ((video && videoAvailable) || (audio && audioAvailable)) {
             navigator.mediaDevices.getUserMedia({ video: video, audio: audio })
@@ -173,6 +177,7 @@ export default function VideoMeet() {
             } catch (e) { }
         }
     }
+
 
     useEffect(() => {
         if (video !== undefined && audio !== undefined) {
@@ -274,6 +279,7 @@ export default function VideoMeet() {
         })
     }
 
+
     let gotMessageFromServer = (fromId, message) => {
        var signal = JSON.parse(message)
 
@@ -296,6 +302,7 @@ export default function VideoMeet() {
         }
       }
 
+
     let silence = () => {
        let ctx = new AudioContext()
         let oscillator = ctx.createOscillator()
@@ -311,6 +318,17 @@ export default function VideoMeet() {
         let stream = canvas.captureStream()
         return Object.assign(stream.getVideoTracks()[0], { enabled: false })
     }
+
+   
+
+    
+      let handleEndCall = () => {
+
+      }
+
+       let sendMessage = () => {
+
+       }
 
 
      const addMessage = (data, sender, socketIdSender) => {
@@ -330,34 +348,179 @@ export default function VideoMeet() {
         getMedia();
     }
 
-  return (
-    <div>
-          {askForUsername === true ?
+     let handleVideo = () => {
+        setVideo(!video);
+        // getUserMedia();
+    }
+
+    let handleAudio = () => {
+        setAudio(!audio)
+        // getUserMedia();
+    }
+
+    let getDislayMediaSuccess = (stream) => {
+        console.log("HERE")
+        try {
+            window.localStream.getTracks().forEach(track => track.stop())
+        } catch (e) { console.log(e) }
+
+        window.localStream = stream
+        localVideoref.current.srcObject = stream
+
+        for (let id in connections) {
+            if (id === socketIdRef.current) continue
+
+            connections[id].addStream(window.localStream)
+
+            connections[id].createOffer().then((description) => {
+                connections[id].setLocalDescription(description)
+                    .then(() => {
+                        socketRef.current.emit('signal', id, JSON.stringify({ 'sdp': connections[id].localDescription }))
+                    })
+                    .catch(e => console.log(e))
+            })
+        }
+        stream.getTracks().forEach(track => track.onended = () => {
+            setScreen(false)
+
+            try {
+                let tracks = localVideoref.current.srcObject.getTracks()
+                tracks.forEach(track => track.stop())
+            } catch (e) { console.log(e) }
+
+            let blackSilence = (...args) => new MediaStream([black(...args), silence()])
+            window.localStream = blackSilence()
+            localVideoref.current.srcObject = window.localStream
+
+            getUserMedia()
+
+        })
+    }
+
+
+     let getDislayMedia = () => {
+        if (screen) {
+            if (navigator.mediaDevices.getDisplayMedia) {
+                navigator.mediaDevices.getDisplayMedia({ video: true, audio: true })
+                    .then(getDislayMediaSuccess)
+                    .then((stream) => { })
+                    .catch((e) => console.log(e))
+            }
+        }
+    }
+     
+    useEffect(() => {
+        if (screen !== undefined) {
+            getDislayMedia();
+        }
+    }, [screen])
+     let handleScreen = () => {
+        setScreen(!screen);
+    }
+
+   return (
+        <div>
+
+            {askForUsername === true ?
 
                 <div>
 
 
                     <h2>Enter into Lobby </h2>
                     <TextField id="outlined-basic" label="Username" value={username} onChange={e => setUsername(e.target.value)} variant="outlined" />
-                    <Button variant="contained"  onClick={connect}>Connect</Button>
+                    <Button variant="contained" onClick={connect}>Connect</Button>
 
 
                     <div>
                         <video ref={localVideoref} autoPlay muted></video>
                     </div>
-                    
-                    </div> : <>
-                       
-                        <video ref={localVideoref} autoPlay muted></video>
 
-                         {videos.map((video) => (
-                          <div key={video.socketId}>
-                              <h2>{video.socketId}</h2>
-                          </div>
-                         ))}
+                </div> :
 
-                    </>
-          }
-    </div>
-  )
+
+                <div className={styles.meetVideoContainer}>
+
+                    {showModal ? <div className={styles.chatRoom}>
+
+                        <div className={styles.chatContainer}>
+                            <h1>Chat</h1>
+
+                            <div className={styles.chattingDisplay}>
+
+                                {messages.length !== 0 ? messages.map((item, index) => {
+
+                                    console.log(messages)
+                                    return (
+                                        <div style={{ marginBottom: "20px" }} key={index}>
+                                            <p style={{ fontWeight: "bold" }}>{item.sender}</p>
+                                            <p>{item.data}</p>
+                                        </div>
+                                    )
+                                }) : <p>No Messages Yet</p>}
+
+
+                            </div>
+
+                            <div className={styles.chattingArea}>
+                                <TextField value={message} onChange={(e) => setMessage(e.target.value)} id="outlined-basic" label="Enter Your chat" variant="outlined" />
+                                <Button variant='contained' onClick={sendMessage}>Send</Button>
+                            </div>
+
+
+                        </div>
+                    </div> : <></>}
+
+
+                    <div className={styles.buttonContainers}>
+                        <IconButton onClick={handleVideo} style={{ color: "white" }}>
+                            {(video === true) ? <VideocamIcon /> : <VideocamOffIcon />}
+                        </IconButton>
+                        <IconButton onClick={handleEndCall} style={{ color: "red" }}>
+                            <CallEndIcon  />
+                        </IconButton>
+                        <IconButton onClick={handleAudio} style={{ color: "white" }}>
+                            {audio === true ? <MicIcon /> : <MicOffIcon />}
+                        </IconButton>
+
+                        {screenAvailable === true ?
+                            <IconButton onClick={handleScreen} style={{ color: "white" }}>
+                                {screen === true ? <ScreenShareIcon /> : <StopScreenShareIcon />}
+                            </IconButton> : <></>}
+
+                        <Badge badgeContent={newMessages} max={999} color='secondary'>
+                            <IconButton onClick={() => setModal(!showModal)} style={{ color: "white" }}>
+                                <ChatIcon />                        </IconButton>
+                        </Badge>
+
+                    </div>
+
+
+                    <video className={styles.meetUserVideo} ref={localVideoref} autoPlay muted></video>
+
+                    <div className={styles.conferenceView}>
+                        {videos.map((video) => (
+                            <div key={video.socketId}>
+                                <video
+
+                                    data-socket={video.socketId}
+                                    ref={ref => {
+                                        if (ref && video.stream) {
+                                            ref.srcObject = video.stream;
+                                        }
+                                    }}
+                                    autoPlay
+                                >
+                                </video>
+                            </div>
+
+                        ))}
+
+                    </div>
+
+                </div>
+
+            }
+
+        </div>
+    )
 }
